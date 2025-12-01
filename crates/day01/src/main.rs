@@ -69,8 +69,24 @@ R60
 L55
 L1
 L99
-R114
-L182";
+R14
+L82";
+        let final_position = part1(basic_input);
+        assert_eq!(final_position, 3);
+    }
+
+    #[test]
+    fn bignum_test_part1() {
+        let basic_input = "L68
+L30
+R48
+L5
+R60
+L755
+L101
+L199
+R814
+L882";
         let final_position = part1(basic_input);
         assert_eq!(final_position, 3);
     }
@@ -89,5 +105,21 @@ R14
 L82";
         let count = part2(basic_input);
         assert_eq!(count, 6);
+    }
+
+    #[test]
+    fn bignum_test_part2() {
+        let basic_input = "L68
+L30
+R48
+L5
+R60
+L55
+L1
+L99
+R214
+L882";
+        let count = part2(basic_input);
+        assert_eq!(count, 16);
     }
 }
