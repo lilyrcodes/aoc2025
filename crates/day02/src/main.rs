@@ -73,10 +73,8 @@ fn part2(input: &str) -> u64 {
 }
 
 fn main() {
-    let mut input = read_to_string("input.txt").unwrap();
-    if let Some(trimmed) = input.strip_suffix('\n') {
-        input = trimmed.to_string();
-    }
+    let input = read_to_string("input.txt").unwrap();
+    let input = input.trim();
     let p1_answer = part1(&input);
     println!("day 1 part 1: {}", p1_answer);
     let p2_answer = part2(&input);
