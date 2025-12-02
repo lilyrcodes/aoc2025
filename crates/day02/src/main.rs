@@ -28,7 +28,7 @@ fn is_repeat_of(s: &str, pat: &str) -> bool {
     if s.len() % step != 0 {
         return false;
     }
-    for i in (0..s.len()).step_by(step) {
+    for i in (step..s.len()).step_by(step) {
         if &s[i..i + step] != pat {
             return false;
         }
@@ -39,8 +39,7 @@ fn is_repeat_of(s: &str, pat: &str) -> bool {
 fn is_valid_id_full(id: u64) -> bool {
     let s = id.to_string();
     for i in 1..=s.len() / 2 {
-        let sub = &s[0..i];
-        if is_repeat_of(&s, sub) {
+        if is_repeat_of(&s, &s[0..i]) {
             return false;
         }
     }
