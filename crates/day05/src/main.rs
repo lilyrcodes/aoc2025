@@ -49,14 +49,17 @@ fn range_intersects(left: &RangeInclusive<u64>, right: &RangeInclusive<u64>) -> 
         || right.contains(left.end())
 }
 
+fn merge(left: &RangeInclusive<u64>, right: &RangeInclusive<u64>) -> RangeInclusive<u64> {
+    (*left.start()).min(*right.start())..=(*left.end()).max(*right.end())
+}
+
 fn merge_ranges(ranges: &mut [RangeInclusive<u64>]) -> Vec<RangeInclusive<u64>> {
     ranges.sort_by(|left, right| left.start().cmp(right.start()));
     let mut new_ranges = vec![ranges[0].clone()];
     for to_consider in ranges.iter().skip(1) {
         let last_idx = new_ranges.len() - 1;
         if range_intersects(&new_ranges[last_idx], to_consider) {
-            new_ranges[last_idx] = (*to_consider.start()).min(*new_ranges[last_idx].start())
-                ..=(*to_consider.end()).max(*new_ranges[last_idx].end());
+            new_ranges[last_idx] = merge(to_consider, &new_ranges[last_idx]);
         } else {
             new_ranges.push(to_consider.clone());
         }
