@@ -89,8 +89,12 @@ fn part1(input: &str) -> u64 {
     total
 }
 
+fn parse_input_part2(input: &str) -> Input {
+    todo!()
+}
+
 fn part2(input: &str) -> u64 {
-    let input = parse_input(input);
+    let input = parse_input_part2(input);
     todo!()
 }
 
