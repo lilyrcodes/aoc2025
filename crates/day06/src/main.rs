@@ -89,7 +89,12 @@ fn part1(input: &str) -> u64 {
     total
 }
 
-fn parse_input_part2(input: &str) -> Input {
+struct Part2Problem {
+    nums: Vec<u64>,
+    op: Operator,
+}
+
+fn parse_input_part2(input: &str) -> Vec<Part2Problem> {
     todo!()
 }
 
