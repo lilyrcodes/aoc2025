@@ -1,4 +1,8 @@
-use std::{collections::VecDeque, fs::read_to_string, str::FromStr};
+use std::{
+    collections::{HashSet, VecDeque},
+    fs::read_to_string,
+    str::FromStr,
+};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 struct Button {
@@ -9,7 +13,7 @@ struct Button {
 struct Machine {
     desired_lights: Vec<bool>,
     buttons: Vec<Button>,
-    desired_joltages: Vec<usize>,
+    desired_joltages: Vec<u16>,
 }
 
 impl FromStr for Machine {
@@ -30,8 +34,11 @@ impl FromStr for Machine {
                     .collect(),
             })
             .collect();
-        let desired_joltages = &desired_joltages[..desired_joltages.len()-1];
-        let desired_joltages = desired_joltages.split(',').map(|num| num.parse::<usize>().unwrap()).collect();
+        let desired_joltages = &desired_joltages[..desired_joltages.len() - 1];
+        let desired_joltages = desired_joltages
+            .split(',')
+            .map(|num| num.parse::<u16>().unwrap())
+            .collect();
         Ok(Machine {
             desired_lights,
             buttons,
@@ -54,6 +61,7 @@ fn compute_state(machine: &Machine, button_presses: &[usize]) -> Vec<bool> {
 
 fn button_presses_for_lights(machine: &Machine) -> usize {
     let mut queue: VecDeque<Vec<usize>> = VecDeque::new();
+    let mut queued_to_visit: HashSet<Vec<usize>> = HashSet::new();
     queue.push_back(vec![0; machine.buttons.len()]);
     while let Some(presses) = queue.pop_front() {
         if compute_state(machine, &presses) == machine.desired_lights {
@@ -62,7 +70,10 @@ fn button_presses_for_lights(machine: &Machine) -> usize {
         for button in 0..machine.buttons.len() {
             let mut next_presses = presses.clone();
             next_presses[button] += 1;
-            queue.push_back(next_presses);
+            if !queued_to_visit.contains(&next_presses) {
+                queue.push_back(next_presses.clone());
+                queued_to_visit.insert(next_presses);
+            }
         }
     }
     panic!("No solution found");
@@ -76,11 +87,14 @@ fn parse_input(input: &str) -> Vec<Machine> {
 }
 
 fn part1(input: &str) -> usize {
-    parse_input(input).iter().map(button_presses_for_lights).sum()
+    parse_input(input)
+        .iter()
+        .map(button_presses_for_lights)
+        .sum()
 }
 
-fn compute_joltages(machine: &Machine, button_presses: &[usize]) -> Vec<usize> {
-    let mut joltages: Vec<usize> = vec![0; machine.desired_joltages.len()];
+fn compute_joltages(machine: &Machine, button_presses: &[u16]) -> Vec<u16> {
+    let mut joltages: Vec<u16> = vec![0; machine.desired_joltages.len()];
     for (button_idx, presses) in button_presses.iter().enumerate() {
         for light in machine.buttons[button_idx].toggles_lights.iter() {
             joltages[*light] += presses;
@@ -90,41 +104,55 @@ fn compute_joltages(machine: &Machine, button_presses: &[usize]) -> Vec<usize> {
 }
 
 fn button_presses_for_joltages(machine: &Machine) -> usize {
-    let mut queue: VecDeque<Vec<usize>> = VecDeque::new();
-    queue.push_back(vec![0; machine.buttons.len()]);
+    let mut queue: VecDeque<Vec<u16>> = VecDeque::new();
+    let mut queued_to_visit: HashSet<Vec<u16>> = HashSet::new();
+    let mut iterations: usize = 0;
+    let start_state = vec![0; machine.buttons.len()];
+    queue.push_back(start_state.clone());
+    queued_to_visit.insert(start_state);
     while let Some(presses) = queue.pop_front() {
+        iterations += 1;
+        if iterations % 1_000_000 == 0 {
+            println!("iteration {}M", iterations / 1_000_000);
+        }
         let joltages = compute_joltages(machine, &presses);
         if joltages == machine.desired_joltages {
-            return presses.into_iter().sum();
+            println!("{} iterations", iterations);
+            return presses.into_iter().map(|n| n as usize).sum();
         }
-        if joltages.iter().zip(machine.desired_joltages.iter()).any(|(c, desired)| c > desired) {
+        if joltages
+            .iter()
+            .zip(machine.desired_joltages.iter())
+            .any(|(c, desired)| c > desired)
+        {
             continue;
         }
 
-        if compute_state(machine, &presses) == machine.desired_lights {
-            return presses.into_iter().sum();
-        }
         for button in 0..machine.buttons.len() {
             let mut next_presses = presses.clone();
             next_presses[button] += 1;
-            queue.push_back(next_presses);
+            if !queued_to_visit.contains(&next_presses) {
+                queue.push_back(next_presses.clone());
+                queued_to_visit.insert(next_presses);
+            }
         }
     }
     panic!("No solution found");
 }
 
 fn part2(input: &str) -> usize {
-    parse_input(input).iter().map(button_presses_for_joltages).sum()
+    parse_input(input)
+        .iter()
+        .map(button_presses_for_joltages)
+        .sum()
 }
 
 fn main() {
     let input = read_to_string("input.txt").unwrap();
     let p1_answer = part1(&input);
     println!("part 1: {}", p1_answer);
-    /*
     let p2_answer = part2(&input);
     println!("part 2: {}", p2_answer);
-    */
 }
 
 #[cfg(test)]
@@ -157,7 +185,7 @@ mod tests {
                     toggles_lights: vec![0, 1],
                 },
             ],
-            desired_joltages: vec![3,5,4,7],
+            desired_joltages: vec![3, 5, 4, 7],
         }
     }
 
@@ -185,17 +213,19 @@ mod tests {
     fn compute_joltages_works() {
         let machine = make_machine();
         let button_presses = vec![1, 3, 0, 3, 1, 2];
-        assert_eq!(compute_joltages(&machine, &button_presses), machine.desired_joltages);
+        assert_eq!(
+            compute_joltages(&machine, &button_presses),
+            machine.desired_joltages
+        );
     }
 
     #[test]
     fn single_machine_joltage() {
         assert_eq!(part2(BASIC_INPUT.lines().next().unwrap()), 10);
     }
-    /*
+
     #[test]
     fn basic_test_part2() {
-        assert_eq!(part2(BASIC_INPUT), 25272);
+        assert_eq!(part2(BASIC_INPUT), 33);
     }
-    */
 }
