@@ -8,3 +8,4 @@ authors = ["Lily Richards <lilymichellerichards@gmail.com>"]
 edition = "2024"
 
 [workspace.dependencies]
+petgraph = "0.8.3"
